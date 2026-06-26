@@ -26,7 +26,7 @@ export default function DashboardPage() {
 
   const user = clerkUser ? { 
     id: clerkUser.id, 
-    name: clerkUser.fullName, 
+    name: profile?.name || clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress || 'Voter', 
     email: clerkUser.primaryEmailAddress?.emailAddress,
     voter_id: profile?.voter_id,
     city: profile?.city,
