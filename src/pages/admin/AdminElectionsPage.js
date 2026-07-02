@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { supabase, supabaseAdmin } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import {
   Plus,
@@ -71,9 +71,9 @@ function ElectionModal({ election, onClose, onSave }) {
 
     let error;
     if (election?.id) {
-      ({ error } = await supabaseAdmin.from('elections').update(payload).eq('id', election.id));
+      ({ error } = await supabase.from('elections').update(payload).eq('id', election.id));
     } else {
-      ({ error } = await supabaseAdmin.from('elections').insert([payload]));
+      ({ error } = await supabase.from('elections').insert([payload]));
     }
 
     setSaving(false);
@@ -230,8 +230,8 @@ export default function AdminElectionsPage() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this election and all its candidates? This cannot be undone.')) return;
     setDeleting(id);
-    await supabaseAdmin.from('candidates').delete().eq('election_id', id);
-    const { error } = await supabaseAdmin.from('elections').delete().eq('id', id);
+    await supabase.from('candidates').delete().eq('election_id', id);
+    const { error } = await supabase.from('elections').delete().eq('id', id);
     setDeleting(null);
     if (error) { toast.error('Failed to delete: ' + error.message); }
     else { toast.success('Election deleted.'); fetchElections(); }
