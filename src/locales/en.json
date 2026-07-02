@@ -9,12 +9,12 @@
     "register": "Register"
   },
   "banner": {
-    "india": "भारत सरकार",
-    "india_en": "Government of India",
+    "india": "National E-Voting Portal",
+    "india_en": "National E-Voting Portal",
     "skip": "Skip to main content"
   },
   "hero": {
-    "badge": "🇮🇳 Government of India Initiative",
+    "badge": "🇮🇳 Official E-Voting Platform",
     "title1": "National Digital",
     "title2": "Voting Portal",
     "desc": "e-Matdaan makes democratic participation easy and secure. Cast your official vote from home, verified by your unique Aadhaar/Voter ID and location.",
