@@ -109,7 +109,6 @@ export default function Navbar() {
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
-      </div>
 
       {/* Mobile Menu */}
       <AnimatePresence>
