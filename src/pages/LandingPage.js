@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Shield, Zap, BarChart2, Users, ArrowRight, CheckCircle } from 'lucide-react';
@@ -46,6 +47,7 @@ const itemVariants = {
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)]">
@@ -62,26 +64,26 @@ export default function LandingPage() {
               className="flex flex-col gap-6"
             >
               <div className="inline-flex w-fit items-center gap-2 rounded-full border border-saffron/30 bg-saffron/10 px-4 py-1.5 text-sm font-semibold text-saffron">
-                🇮🇳 Government of India Initiative
+                {t('hero.badge')}
               </div>
               <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-tight text-chakra-blue dark:text-blue-400">
-                National Digital
+                {t('hero.title1')}
                 <br />
-                Voting Portal
+                {t('hero.title2')}
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed max-w-lg">
-                e-Matdaan makes democratic participation easy and secure. Cast your official vote from home, verified by your unique Aadhaar/Voter ID and location.
+                {t('hero.desc')}
               </p>
               <div className="flex flex-wrap items-center gap-3">
-                <Button size="lg" className="rounded-full px-8 gap-2" onClick={() => navigate('/register')}>
-                  Start Voting Now <ArrowRight className="h-4 w-4" />
+                <Button size="lg" className="rounded-full px-8 gap-2 group transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)]" onClick={() => navigate('/register')}>
+                  {t('hero.btn_start')} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
-                <Button size="lg" variant="outline" className="rounded-full px-8" onClick={() => navigate('/about')}>
-                  Learn More
+                <Button size="lg" variant="outline" className="rounded-full px-8 transition-all hover:scale-105 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => navigate('/about')}>
+                  {t('hero.btn_learn')}
                 </Button>
               </div>
               <div className="flex items-center gap-6 pt-2">
-                {['No fraud', 'Instant results', 'Private & secure'].map((item) => (
+                {[t('hero.perk1'), t('hero.perk2'), t('hero.perk3')].map((item) => (
                   <div key={item} className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <CheckCircle className="h-4 w-4 text-primary" />
                     {item}
@@ -95,9 +97,11 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
-              className="relative"
+              whileHover={{ scale: 1.03, y: -8, rotateY: 2 }}
+              style={{ perspective: 1000 }}
+              className="relative cursor-pointer"
             >
-              <div className="relative rounded-2xl border border-border bg-card shadow-2xl p-8 overflow-hidden">
+              <div className="relative rounded-2xl border border-border bg-card shadow-2xl p-8 overflow-hidden transition-all duration-300 hover:shadow-primary/20 hover:border-primary/30">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-bl-full -z-0" />
                 <div className="relative z-10">
                   <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Live Dashboard</p>
@@ -142,9 +146,14 @@ export default function LandingPage() {
             className="grid grid-cols-2 md:grid-cols-4 gap-6"
           >
             {stats.map((item) => (
-              <motion.div key={item.label} variants={itemVariants} className="text-center">
-                <p className="text-4xl font-extrabold text-primary">{item.value}</p>
-                <p className="text-sm text-muted-foreground mt-1">{item.label}</p>
+              <motion.div key={item.label} variants={itemVariants} className="text-center group">
+                <p className="text-4xl font-extrabold text-primary transition-transform group-hover:scale-110 inline-block">{item.value}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {item.label === 'Active Voters' ? t('stats.voters') : 
+                   item.label === 'Elections Hosted' ? t('stats.elections') : 
+                   item.label === 'Total Votes Cast' ? t('stats.votes') : 
+                   t('stats.success')}
+                </p>
               </motion.div>
             ))}
           </motion.div>

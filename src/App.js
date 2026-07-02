@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AppRoutes from './routes/AppRoutes';
 import { ThemeContext } from './contexts/ThemeContext';
+import './i18n'; // Import i18n configuration
 
 function App() {
   const [theme, setTheme] = useState(() => {

@@ -1,0 +1,33 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "admin": "Admin Panel",
+    "login": "Login",
+    "register": "Register"
+  },
+  "banner": {
+    "india": "भारत सरकार",
+    "india_en": "Government of India",
+    "skip": "Skip to main content"
+  },
+  "hero": {
+    "badge": "🇮🇳 Government of India Initiative",
+    "title1": "National Digital",
+    "title2": "Voting Portal",
+    "desc": "e-Matdaan makes democratic participation easy and secure. Cast your official vote from home, verified by your unique Aadhaar/Voter ID and location.",
+    "btn_start": "Start Voting Now",
+    "btn_learn": "Learn More",
+    "perk1": "No fraud",
+    "perk2": "Instant results",
+    "perk3": "Private & secure"
+  },
+  "stats": {
+    "voters": "Active Voters",
+    "elections": "Elections Hosted",
+    "votes": "Total Votes Cast",
+    "success": "Success Rate"
+  }
+}

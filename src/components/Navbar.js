@@ -6,12 +6,14 @@ import { Button } from './ui/button';
 import { Moon, Sun, Menu, X, Vote, ShieldCheck } from 'lucide-react';
 import { Show, UserButton } from '@clerk/react';
 import { useAdminCheck } from '../hooks/useAdminCheck';
+import { useTranslation } from 'react-i18next';
 import GovBanner from './GovBanner';
 
+// Keys mapped to locales
 const navItems = [
-  { label: 'Home', path: '/' },
-  { label: 'About', path: '/about' },
-  { label: 'Contact', path: '/contact' },
+  { key: 'home', path: '/' },
+  { key: 'about', path: '/about' },
+  { key: 'contact', path: '/contact' },
 ];
 
 export default function Navbar() {
@@ -19,6 +21,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { isAdmin } = useAdminCheck();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -41,7 +44,7 @@ export default function Navbar() {
         <nav className="hidden md:flex items-center gap-1">
           {navItems.map((item) => (
             <NavLink
-              key={item.label}
+              key={item.key}
               to={item.path}
               className={({ isActive }) =>
                 `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -51,53 +54,49 @@ export default function Navbar() {
                 }`
               }
             >
-              {item.label}
+              {t(`nav.${item.key}`)}
             </NavLink>
           ))}
         </nav>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-2">
+        {/* Desktop Actions */}
+        <div className="hidden md:flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            aria-label="Toggle theme"
-            className="hidden md:flex"
+            className="rounded-full text-muted-foreground hover:text-foreground"
           >
-            {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
           <Show when="signed-in">
-            <div className="hidden md:flex items-center gap-2">
-              {isAdmin && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/admin')}
-                  className="gap-1.5 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20"
-                >
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Admin
-                </Button>
-              )}
-              <Button variant="secondary" size="sm" onClick={() => navigate('/dashboard')}>
-                Dashboard
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/admin')}
+                className="gap-2 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-950/30 transition-all hover:shadow-[0_0_15px_rgba(220,38,38,0.15)]"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                {t('nav.admin')}
               </Button>
-              <UserButton afterSignOutUrl="/" />
-            </div>
+            )}
+            <Button variant="secondary" size="sm" onClick={() => navigate('/dashboard')} className="hover:shadow-[0_0_15px_rgba(0,0,0,0.1)] transition-all">
+              {t('nav.dashboard')}
+            </Button>
+            <UserButton afterSignOutUrl="/" />
           </Show>
 
           <Show when="signed-out">
-            <div className="hidden md:flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
-                Login
-              </Button>
-              <Button size="sm" onClick={() => navigate('/register')}>
-                Register
-              </Button>
-            </div>
+            <Button variant="outline" size="sm" onClick={() => navigate('/login')} className="hover:shadow-[0_0_15px_rgba(0,0,0,0.1)] transition-all">
+              {t('nav.login')}
+            </Button>
+            <Button size="sm" onClick={() => navigate('/register')} className="hover:shadow-[0_0_15px_rgba(37,99,235,0.3)] transition-all">
+              {t('nav.register')}
+            </Button>
           </Show>
+        </div>
 
           {/* Mobile Menu Toggle */}
           <Button
@@ -122,27 +121,28 @@ export default function Navbar() {
             transition={{ duration: 0.2 }}
             className="md:hidden border-t border-border bg-background overflow-hidden"
           >
-            <div className="container mx-auto max-w-7xl px-4 py-4 flex flex-col gap-2">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.label}
-                  to={item.path}
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                    }`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
+            <div className="container mx-auto max-w-7xl">
+              <div className="flex flex-col gap-2 p-4">
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.key}
+                    to={item.path}
+                    onClick={() => setOpen(false)}
+                    className={({ isActive }) =>
+                      `px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'
+                      }`
+                    }
+                  >
+                    {t(`nav.${item.key}`)}
+                  </NavLink>
+                ))}
               <div className="flex flex-col gap-2 pt-3 border-t border-border mt-2">
                 <Button variant="ghost" size="sm" onClick={toggleTheme} className="justify-start gap-2">
                   {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                   {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
                 </Button>
-                
+                <div className="my-2 h-px bg-border" />
                 <Show when="signed-in">
                   {isAdmin && (
                     <Button
@@ -152,11 +152,11 @@ export default function Navbar() {
                       className="justify-start gap-2 border-red-200 text-red-600 dark:border-red-900/40 dark:text-red-400"
                     >
                       <ShieldCheck className="h-4 w-4" />
-                      Admin Panel
+                      {t('nav.admin')}
                     </Button>
                   )}
                   <Button variant="secondary" size="sm" onClick={() => { navigate('/dashboard'); setOpen(false); }}>
-                    Dashboard
+                    {t('nav.dashboard')}
                   </Button>
                   <div className="py-2">
                     <UserButton afterSignOutUrl="/" />
@@ -165,13 +165,14 @@ export default function Navbar() {
                 
                 <Show when="signed-out">
                   <Button variant="outline" size="sm" onClick={() => { navigate('/login'); setOpen(false); }}>
-                    Login
+                    {t('nav.login')}
                   </Button>
                   <Button size="sm" onClick={() => { navigate('/register'); setOpen(false); }}>
-                    Register
+                    {t('nav.register')}
                   </Button>
                 </Show>
               </div>
+            </div>
             </div>
           </motion.div>
         )}
