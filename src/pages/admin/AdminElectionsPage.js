@@ -98,12 +98,22 @@ function ElectionModal({ election, onClose, onSave }) {
     // Treat the datetime-local values as IST and convert to UTC-aware ISO strings
     const startIST = localToIST(form.start_time);
     const endIST = localToIST(form.end_time);
+
+    // Compute status instantaneously based on selected times
+    const nowMs = Date.now();
+    const startMs = new Date(startIST).getTime();
+    const endMs = new Date(endIST).getTime();
+    
+    let computedStatus = 'Upcoming';
+    if (nowMs >= endMs) computedStatus = 'Completed';
+    else if (nowMs >= startMs) computedStatus = 'Ongoing';
+
     const payload = {
       title: form.title.trim(),
       description: form.description?.trim() || null,
       type: form.type || 'General',
       district: form.district?.trim() || null,
-      status: form.status || 'Upcoming',
+      status: computedStatus,
       start_time: startIST,
       end_time: endIST,
       // Human-readable IST date strings for legacy display fields
