@@ -28,8 +28,6 @@ export default function OnboardingPage() {
   const stateOptions = indiaLocations.map((item) => item.state);
   const stateEntry = indiaLocations.find((item) => item.state === form.state);
   const districtOptions = stateEntry?.districts || [];
-  const districtEntry = districtOptions.find((item) => item.district === form.district);
-  const cityOptions = districtEntry?.cities || [];
 
   const validate = () => {
     const next = {};
@@ -173,21 +171,13 @@ export default function OnboardingPage() {
 
                 {/* City */}
                 <div className="space-y-1.5">
-                  <Label>City / Constituency</Label>
-                  <Select
+                  <Label>City / Village / Constituency</Label>
+                  <Input
+                    placeholder="Enter your city or village"
                     value={form.city}
-                    onValueChange={(val) => setForm({ ...form, city: val })}
-                    disabled={!form.district}
-                  >
-                    <SelectTrigger className={errors.city ? 'border-destructive' : ''}>
-                      <SelectValue placeholder="Select City" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cityOptions.map((city) => (
-                        <SelectItem key={city} value={city}>{city}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    className={errors.city ? 'border-destructive' : ''}
+                  />
                   {errors.city && <p className="text-xs text-destructive">{errors.city}</p>}
                 </div>
               </div>
