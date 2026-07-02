@@ -1,64 +1,86 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '../components/ui/card';
 import { Shield, Eye, Heart } from 'lucide-react';
 
-const values = [
-  {
-    icon: Shield,
-    title: 'Mission',
-    description:
-      'Build a secure digital voting environment that empowers citizens and strengthens democratic participation across the nation.',
-    color: 'text-primary bg-primary/10',
-  },
-  {
-    icon: Eye,
-    title: 'Vision',
-    description:
-      'Deliver transparent, accessible elections through a premium online experience, backed by modern security standards and open governance.',
-    color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/20',
-  },
-  {
-    icon: Heart,
-    title: 'Why SmartVote',
-    description:
-      'From real-time results to secure authentication, SmartVote is built to be elegant, reliable, and easy to use for every voter.',
-    color: 'text-rose-600 bg-rose-100 dark:bg-rose-900/20',
-  },
-];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.12 } },
-};
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
-
 export default function AboutPage() {
+  const { t } = useTranslation();
+
+  const values = [
+    {
+      icon: Shield,
+      title: t('about.val_miss_title'),
+      description: t('about.val_miss_desc'),
+      color: 'text-primary bg-primary/10',
+    },
+    {
+      icon: Eye,
+      title: t('about.val_vis_title'),
+      description: t('about.val_vis_desc'),
+      color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/20',
+    },
+    {
+      icon: Heart,
+      title: t('about.val_why_title'),
+      description: t('about.val_why_desc'),
+      color: 'text-rose-600 bg-rose-100 dark:bg-rose-900/20',
+    },
+  ];
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.12 } },
+  };
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-background">
-      {/* Hero */}
-      <section className="relative overflow-hidden py-20 md:py-28">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_70%_70%_at_50%_-10%,hsl(var(--primary)/0.1),transparent)]" />
-        <div className="container mx-auto max-w-4xl px-4 text-center">
+    <div className="flex flex-col min-h-[calc(100vh-4rem)]">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-background py-20">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,hsl(var(--primary)/0.1),transparent)]" />
+        <div className="container mx-auto max-w-7xl px-4 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-4">About SmartVote</p>
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
-              Modern Election Infrastructure
-              <br />
-              <span className="text-primary">Designed for Trust</span>
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+              {t('about.title')}
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              SmartVote was built to make democratic participation accessible, secure, and transparent for every citizen — regardless of location.
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {t('about.subtitle')}
             </p>
           </motion.div>
         </div>
       </section>
 
+      {/* Mission & Vision */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+              <h2 className="text-3xl font-bold mb-4">{t('about.mission_title')}</h2>
+              <p className="text-muted-foreground leading-relaxed text-lg">
+                {t('about.mission_desc')}
+              </p>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+              <div className="rounded-2xl bg-card border border-border p-8 shadow-sm">
+                <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  {t('about.security_title')}
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {t('about.security_desc')}
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Values */}
-      <section className="py-16 bg-muted/20">
+      <section className="py-16 bg-background">
         <div className="container mx-auto max-w-5xl px-4">
           <motion.div
             variants={containerVariants}

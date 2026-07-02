@@ -8,17 +8,13 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export default function OnboardingPage() {
+  const { t } = useTranslation();
   const { user } = useUser();
   const navigate = useNavigate();
   const [form, setForm] = useState({ voterId: '', phone: '', state: '', district: '', city: '' });
@@ -31,11 +27,11 @@ export default function OnboardingPage() {
 
   const validate = () => {
     const next = {};
-    if (!form.voterId.trim()) next.voterId = 'Voter ID is required.';
-    if (!form.phone.match(/^\d{10}$/)) next.phone = 'Please enter a valid 10-digit phone number.';
-    if (!form.state) next.state = 'Please select your state.';
-    if (!form.district) next.district = 'Please select your district.';
-    if (!form.city) next.city = 'Please select your city.';
+    if (!form.voterId.trim()) next.voterId = t('onboarding.req_voter_id');
+    if (!form.phone.match(/^\d{10}$/)) next.phone = t('onboarding.req_phone');
+    if (!form.state) next.state = t('onboarding.req_state');
+    if (!form.district) next.district = t('onboarding.req_district');
+    if (!form.city) next.city = t('onboarding.req_city');
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -94,9 +90,9 @@ export default function OnboardingPage() {
                 <UserPlus className="h-6 w-6" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-center">Complete Your Profile</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">{t('onboarding.title')}</CardTitle>
             <CardDescription className="text-center">
-              We need a few more details to set up your voter profile
+              {t('onboarding.subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -104,10 +100,10 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Voter ID */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="voterId">Voter ID</Label>
+                  <Label htmlFor="voterId">{t('onboarding.voter_id')}</Label>
                   <Input
                     id="voterId"
-                    placeholder="e.g., SMV-2026-4567"
+                    placeholder={t('onboarding.voter_id_ph')}
                     value={form.voterId}
                     onChange={(e) => setForm({ ...form, voterId: e.target.value.toUpperCase() })}
                     className={errors.voterId ? 'border-destructive' : ''}
@@ -117,10 +113,10 @@ export default function OnboardingPage() {
 
                 {/* Phone Number */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">{t('onboarding.phone')}</Label>
                   <Input
                     id="phone"
-                    placeholder="10-digit mobile number"
+                    placeholder={t('onboarding.phone_ph')}
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     className={errors.phone ? 'border-destructive' : ''}
@@ -132,13 +128,13 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* State */}
                 <div className="space-y-1.5">
-                  <Label>State</Label>
+                  <Label>{t('onboarding.state')}</Label>
                   <Select
                     value={form.state}
                     onValueChange={(val) => setForm({ ...form, state: val, district: '', city: '' })}
                   >
                     <SelectTrigger className={errors.state ? 'border-destructive' : ''}>
-                      <SelectValue placeholder="Select State" />
+                      <SelectValue placeholder={t('onboarding.state_ph')} />
                     </SelectTrigger>
                     <SelectContent>
                       {stateOptions.map((state) => (
@@ -151,14 +147,14 @@ export default function OnboardingPage() {
 
                 {/* District */}
                 <div className="space-y-1.5">
-                  <Label>District</Label>
+                  <Label>{t('onboarding.district')}</Label>
                   <Select
                     value={form.district}
                     onValueChange={(val) => setForm({ ...form, district: val, city: '' })}
                     disabled={!form.state}
                   >
                     <SelectTrigger className={errors.district ? 'border-destructive' : ''}>
-                      <SelectValue placeholder="Select District" />
+                      <SelectValue placeholder={t('onboarding.district_ph')} />
                     </SelectTrigger>
                     <SelectContent>
                       {districtOptions.map((d) => (
@@ -171,9 +167,9 @@ export default function OnboardingPage() {
 
                 {/* City */}
                 <div className="space-y-1.5">
-                  <Label>City / Village / Constituency</Label>
+                  <Label>{t('onboarding.city')}</Label>
                   <Input
-                    placeholder="Enter your city or village"
+                    placeholder={t('onboarding.city_ph')}
                     value={form.city}
                     onChange={(e) => setForm({ ...form, city: e.target.value })}
                     className={errors.city ? 'border-destructive' : ''}
@@ -184,7 +180,7 @@ export default function OnboardingPage() {
 
               <div className="pt-4 flex flex-col items-center">
                 <Button type="submit" className="w-full max-w-sm" size="lg" disabled={loading}>
-                  {loading ? 'Saving...' : 'Complete Profile'}
+                  {loading ? t('onboarding.saving') : t('onboarding.submit')}
                 </Button>
               </div>
             </form>

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Vote } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
+  const { t } = useTranslation();
+
   return (
     <footer className="border-t border-border bg-card mt-auto">
       <div className="container mx-auto max-w-7xl px-4 py-10">
@@ -13,35 +16,35 @@ export default function Footer() {
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <Vote className="h-4 w-4" />
               </div>
-              <span>SmartVote</span>
+              <span>e-Matdaan</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Secure, transparent digital voting for modern democracies. Your vote matters.
+              {t('footer.brand_desc')}
             </p>
           </div>
 
           {/* Platform Links */}
           <div className="flex flex-col gap-2">
-            <h4 className="text-sm font-semibold mb-1">Platform</h4>
-            <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</Link>
-            <Link to="/elections" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Elections</Link>
-            <Link to="/results" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Results</Link>
+            <h4 className="text-sm font-semibold mb-1">{t('footer.platform')}</h4>
+            <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{t('footer.about')}</Link>
+            <Link to="/elections" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{t('footer.elections')}</Link>
+            <Link to="/results" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{t('footer.results')}</Link>
           </div>
 
           {/* Support Links */}
           <div className="flex flex-col gap-2">
-            <h4 className="text-sm font-semibold mb-1">Support</h4>
-            <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact Us</Link>
-            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+            <h4 className="text-sm font-semibold mb-1">{t('footer.support')}</h4>
+            <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{t('footer.contact')}</Link>
+            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{t('footer.privacy')}</Link>
+            <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{t('footer.terms')}</Link>
           </div>
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 mt-8 border-t border-border">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} SmartVote. All rights reserved.
+            {t('footer.rights', { year: new Date().getFullYear() })}
           </p>
-          <p className="text-xs text-muted-foreground">Secure · Transparent · Democratic</p>
+          <p className="text-xs text-muted-foreground">{t('footer.tagline')}</p>
         </div>
       </div>
     </footer>
