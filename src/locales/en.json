@@ -110,7 +110,8 @@
     "quick_actions": "Quick Actions",
     "voter_info": "Your Voter Information",
     "state": "State",
-    "voter_id": "Your Voter ID",
+    "voter_id": "Your Voter ID"
+  },
   "profile": {
     "title": "Voter Profile",
     "personal_info": "Personal Information",
