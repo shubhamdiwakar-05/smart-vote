@@ -61,16 +61,16 @@ export default function LandingPage() {
               transition={{ duration: 0.6, ease: 'easeOut' }}
               className="flex flex-col gap-6"
             >
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
-                🗳️ Secure Online Voting Platform
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-saffron/30 bg-saffron/10 px-4 py-1.5 text-sm font-semibold text-saffron">
+                🇮🇳 Government of India Initiative
               </div>
-              <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-tight">
-                Vote Safely
+              <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-tight text-chakra-blue dark:text-blue-400">
+                National Digital
                 <br />
-                <span className="text-primary">From Anywhere</span>
+                Voting Portal
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed max-w-lg">
-                SmartVote makes democratic participation easy and secure. Cast your official vote from home, verified by your unique voter ID and location.
+                e-Matdaan makes democratic participation easy and secure. Cast your official vote from home, verified by your unique Aadhaar/Voter ID and location.
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <Button size="lg" className="rounded-full px-8 gap-2" onClick={() => navigate('/register')}>

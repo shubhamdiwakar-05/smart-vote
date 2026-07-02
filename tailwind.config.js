@@ -14,6 +14,9 @@ module.exports = {
     },
     extend: {
       colors: {
+        saffron: "#FF9933",
+        "india-green": "#138808",
+        "chakra-blue": "#000080",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { Moon, Sun, Menu, X, Vote, ShieldCheck } from 'lucide-react';
 import { Show, UserButton } from '@clerk/react';
 import { useAdminCheck } from '../hooks/useAdminCheck';
+import GovBanner from './GovBanner';
 
 const navItems = [
   { label: 'Home', path: '/' },
@@ -20,15 +21,21 @@ export default function Navbar() {
   const { isAdmin } = useAdminCheck();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto max-w-7xl px-4 flex h-16 items-center justify-between gap-4">
-        {/* Brand */}
-        <Link to="/" className="flex items-center gap-2.5 font-bold text-xl text-foreground hover:opacity-80 transition-opacity">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Vote className="h-4 w-4" />
-          </div>
-          <span>SmartVote</span>
-        </Link>
+    <>
+      <GovBanner />
+      <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="h-1 w-full bg-tricolor-gradient" />
+        <div className="container mx-auto max-w-7xl px-4 flex h-16 items-center justify-between gap-4 border-b border-border/40">
+          {/* Brand */}
+          <Link to="/" className="flex items-center gap-3 font-bold text-foreground hover:opacity-80 transition-opacity">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md border border-primary/20">
+              <Vote className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col justify-center">
+              <span className="text-lg leading-none tracking-tight mb-0.5">SmartVote</span>
+              <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">National E-Voting Portal</span>
+            </div>
+          </Link>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
@@ -170,5 +177,6 @@ export default function Navbar() {
         )}
       </AnimatePresence>
     </header>
+    </>
   );
 }
