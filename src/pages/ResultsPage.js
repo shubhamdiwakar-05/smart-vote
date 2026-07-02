@@ -1,80 +1,70 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import ResultCard from '../components/ResultCard';
 import Sidebar from '../components/Sidebar';
 import { Card, CardContent } from '../components/ui/card';
 import { supabase } from '../lib/supabaseClient';
-import { Trophy } from 'lucide-react';
+import { Trophy, Lock, BarChart3 } from 'lucide-react';
 
 export default function ResultsPage() {
-  const [results, setResults] = useState([]);
+  const [electionsWithResults, setElectionsWithResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [electionTitle, setElectionTitle] = useState('Results Loading...');
+  const [activeTab, setActiveTab] = useState(null);
 
   useEffect(() => {
-    const fetchResults = async () => {
-      const { data: electionData } = await supabase
+    const fetchAllResults = async () => {
+      // Only show Completed elections to voters (results locked until done)
+      const { data: elections } = await supabase
         .from('elections')
         .select('*')
-        .order('start_date', { ascending: false })
-        .limit(1)
-        .single();
+        .eq('status', 'Completed')
+        .order('end_time', { ascending: false });
 
-      if (electionData) {
-        setElectionTitle(electionData.title);
+      if (!elections || elections.length === 0) {
+        setElectionsWithResults([]);
+        setLoading(false);
+        return;
+      }
 
-        const { data: candidatesData } = await supabase
-          .from('candidates')
-          .select('*')
-          .eq('election_id', electionData.id);
+      const results = await Promise.all(
+        elections.map(async (election) => {
+          const { data: candidates } = await supabase
+            .from('candidates')
+            .select('*')
+            .eq('election_id', election.id);
 
-        if (candidatesData) {
-          const { data: voteResults } = await supabase.rpc('get_election_results', {
-            p_election_id: electionData.id,
-          });
-
-          let totalVotesAll = 0;
-          const aggregated = candidatesData.map((candidate) => {
-            const resultMatch = voteResults?.find((r) => r.candidate_id === candidate.id);
-            const votesCount = resultMatch ? parseInt(resultMatch.total_votes, 10) : 0;
-            totalVotesAll += votesCount;
-            return { id: candidate.id, name: candidate.name, party: candidate.party, photo: candidate.photo_url, votes: votesCount };
-          });
-
-          let finalResults = aggregated
-            .map((item) => ({
-              ...item,
-              percent: totalVotesAll > 0 ? Math.round((item.votes / totalVotesAll) * 100) : 0,
-            }))
-            .sort((a, b) => b.votes - a.votes)
-            .map((item, index) => ({ ...item, rank: index + 1 }));
-
-          // If no votes have been cast yet, inject some beautiful mock placeholder data to demonstrate the UI
-          if (totalVotesAll === 0) {
-            finalResults = [
-              { id: '1', name: 'Narendra Modi', party: 'BJP', photo: '/candidates/modi.jpg', votes: 45230, percent: 45, rank: 1 },
-              { id: '2', name: 'Rahul Gandhi', party: 'INC', photo: '/candidates/rahul.jpg', votes: 32150, percent: 32, rank: 2 },
-              { id: '3', name: 'Arvind Kejriwal', party: 'AAP', photo: '/candidates/kejriwal.jpg', votes: 15400, percent: 15, rank: 3 },
-              { id: '4', name: 'Akhilesh Yadav', party: 'SP', photo: '/candidates/akhilesh.jpg', votes: 8020, percent: 8, rank: 4 },
-            ];
+          if (!candidates || candidates.length === 0) {
+            return { ...election, results: [], totalVotes: 0 };
           }
 
-          setResults(finalResults);
-        }
-      } else {
-        // Fallback mock data if no elections are found in the DB
-        setElectionTitle('General Elections 2026 (Mock Data)');
-        setResults([
-          { id: '1', name: 'Narendra Modi', party: 'BJP', photo: '/candidates/modi.jpg', votes: 1254320, percent: 48, rank: 1 },
-          { id: '2', name: 'Rahul Gandhi', party: 'INC', photo: '/candidates/rahul.jpg', votes: 954200, percent: 37, rank: 2 },
-          { id: '3', name: 'Mamata Banerjee', party: 'AITC', photo: '/candidates/mamata.jpg', votes: 215000, percent: 8, rank: 3 },
-          { id: '4', name: 'Arvind Kejriwal', party: 'AAP', photo: '/candidates/kejriwal.jpg', votes: 182000, percent: 7, rank: 4 },
-        ]);
-      }
+          const { data: voteResults } = await supabase.rpc('get_election_results', {
+            p_election_id: election.id,
+          });
+
+          let totalVotes = 0;
+          const enriched = candidates
+            .map((c) => {
+              const match = voteResults?.find((r) => r.candidate_id === c.id);
+              const votes = match ? parseInt(match.total_votes, 10) : 0;
+              totalVotes += votes;
+              return { id: c.id, name: c.name, party: c.party, photo: c.photo_url, symbol: c.symbol, votes };
+            })
+            .sort((a, b) => b.votes - a.votes)
+            .map((item, index) => ({ ...item, percent: totalVotes > 0 ? Math.round((item.votes / totalVotes) * 100) : 0, rank: index + 1 }));
+
+          return { ...election, results: enriched, totalVotes };
+        })
+      );
+
+      setElectionsWithResults(results);
+      setActiveTab(results[0]?.id || null);
       setLoading(false);
     };
 
-    fetchResults();
+    fetchAllResults();
   }, []);
+
+  const activeElection = electionsWithResults.find((e) => e.id === activeTab);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -84,9 +74,11 @@ export default function ResultsPage() {
         <section className="space-y-6 min-w-0">
           {/* Header */}
           <div className="rounded-2xl border border-border bg-gradient-to-r from-amber-500/5 via-background to-background p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 mb-2">Live Tally</p>
-            <h1 className="text-2xl font-extrabold tracking-tight">{electionTitle}</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Real-time vote counts as ballots are recorded.</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 mb-2">Official Results</p>
+            <h1 className="text-2xl font-extrabold tracking-tight">Election Results</h1>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Results are published after each election concludes.
+            </p>
           </div>
 
           {loading ? (
@@ -96,57 +88,108 @@ export default function ResultsPage() {
                 <p className="text-sm">Loading results...</p>
               </div>
             </div>
-          ) : results.length > 0 ? (
-            <>
-              {/* Winner Card */}
-              <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-r from-amber-50 to-background dark:from-amber-900/10">
-                <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
-                  <div className="relative shrink-0">
-                    <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-amber-300 dark:border-amber-700 shadow-lg">
-                      {results[0].photo ? (
-                        <img src={results[0].photo} alt={results[0].name} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="h-full w-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-3xl font-bold text-amber-600">
-                          {results[0].name?.[0]}
-                        </div>
-                      )}
-                    </div>
-                    <div className="absolute -top-2 -right-2 h-8 w-8 bg-amber-400 rounded-full flex items-center justify-center shadow-md">
-                      <Trophy className="h-4 w-4 text-white" />
-                    </div>
-                  </div>
-                  <div className="text-center sm:text-left">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">Leading / Winner</p>
-                    <h2 className="text-2xl font-extrabold mt-0.5">{results[0].name}</h2>
-                    <p className="text-muted-foreground text-sm">{results[0].party}</p>
-                  </div>
-                  <div className="sm:ml-auto text-center sm:text-right">
-                    <p className="text-4xl font-extrabold text-amber-600 dark:text-amber-400">
-                      {results[0].votes.toLocaleString()}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Votes · {results[0].percent}%</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* All Results */}
-              <div className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Full Leaderboard</h2>
-                <div className="space-y-2">
-                  {results.map((item) => (
-                    <ResultCard key={item.rank} result={item} />
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : (
+          ) : electionsWithResults.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center h-64 text-center gap-3">
-                <Trophy className="h-12 w-12 text-muted-foreground" />
+              <CardContent className="flex flex-col items-center justify-center h-64 text-center gap-3 p-8">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                  <Lock className="h-8 w-8 text-muted-foreground" />
+                </div>
                 <p className="text-lg font-semibold">No Results Yet</p>
-                <p className="text-sm text-muted-foreground">Results will appear here as votes are counted.</p>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  Results will be published here once an election has concluded. Check back after active elections close.
+                </p>
               </CardContent>
             </Card>
+          ) : (
+            <>
+              {/* Election Tabs */}
+              {electionsWithResults.length > 1 && (
+                <div className="flex gap-2 flex-wrap">
+                  {electionsWithResults.map((e) => (
+                    <button
+                      key={e.id}
+                      onClick={() => setActiveTab(e.id)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all max-w-[200px] truncate ${
+                        activeTab === e.id
+                          ? 'bg-amber-500 text-white shadow-sm'
+                          : 'bg-muted text-muted-foreground hover:text-foreground hover:bg-accent'
+                      }`}
+                    >
+                      {e.title}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {activeElection && (
+                <div className="space-y-4">
+                  {/* Election name label */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full border text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                      Completed
+                    </span>
+                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                      <BarChart3 className="h-3.5 w-3.5" /> {activeElection.totalVotes.toLocaleString()} total votes
+                    </span>
+                  </div>
+
+                  {activeElection.results.length === 0 ? (
+                    <Card>
+                      <CardContent className="p-8 text-center text-muted-foreground">
+                        No candidates were registered for this election.
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <>
+                      {/* Winner Card */}
+                      {activeElection.totalVotes > 0 && (
+                        <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-r from-amber-50 to-background dark:from-amber-900/10">
+                          <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
+                            <div className="relative shrink-0">
+                              <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-amber-300 dark:border-amber-700 shadow-lg">
+                                {activeElection.results[0].photo ? (
+                                  <img src={activeElection.results[0].photo} alt={activeElection.results[0].name} className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="h-full w-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-3xl font-bold text-amber-600">
+                                    {activeElection.results[0].symbol || activeElection.results[0].name?.[0]}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="absolute -top-2 -right-2 h-8 w-8 bg-amber-400 rounded-full flex items-center justify-center shadow-md">
+                                <Trophy className="h-4 w-4 text-white" />
+                              </div>
+                            </div>
+                            <div className="text-center sm:text-left">
+                              <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">🏆 Winner</p>
+                              <h2 className="text-2xl font-extrabold mt-0.5">{activeElection.results[0].name}</h2>
+                              <p className="text-muted-foreground text-sm">{activeElection.results[0].party}</p>
+                            </div>
+                            <div className="sm:ml-auto text-center sm:text-right">
+                              <p className="text-4xl font-extrabold text-amber-600 dark:text-amber-400">
+                                {activeElection.results[0].votes.toLocaleString()}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Votes · {activeElection.results[0].percent}%
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Full Leaderboard */}
+                      <div className="space-y-3">
+                        <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Full Leaderboard</h2>
+                        <div className="space-y-2">
+                          {activeElection.results.map((item) => (
+                            <ResultCard key={item.rank} result={item} />
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>

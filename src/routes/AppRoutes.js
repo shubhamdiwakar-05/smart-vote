@@ -13,6 +13,14 @@ import AboutPage from '../pages/AboutPage';
 import ContactPage from '../pages/ContactPage';
 import OnboardingPage from '../pages/OnboardingPage';
 
+// Admin Pages
+import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import AdminElectionsPage from '../pages/admin/AdminElectionsPage';
+import AdminCandidatesPage from '../pages/admin/AdminCandidatesPage';
+import AdminVotersPage from '../pages/admin/AdminVotersPage';
+import AdminResultsPage from '../pages/admin/AdminResultsPage';
+
+import AdminRoute from './AdminRoute';
 import { useUser } from '@clerk/react';
 
 function ProtectedRoute({ children }) {
@@ -46,17 +54,28 @@ function ProtectedRoute({ children }) {
 export default function AppRoutes() {
   return (
     <Routes>
+      {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
+
+      {/* Voter Protected Routes */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/elections" element={<ProtectedRoute><ElectionListPage /></ProtectedRoute>} />
       <Route path="/vote" element={<ProtectedRoute><VotePage /></ProtectedRoute>} />
       <Route path="/results" element={<ProtectedRoute><ResultsPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+
+      {/* Admin Routes — protected by AdminRoute guard */}
+      <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+      <Route path="/admin/elections" element={<AdminRoute><AdminElectionsPage /></AdminRoute>} />
+      <Route path="/admin/candidates" element={<AdminRoute><AdminCandidatesPage /></AdminRoute>} />
+      <Route path="/admin/voters" element={<AdminRoute><AdminVotersPage /></AdminRoute>} />
+      <Route path="/admin/results" element={<AdminRoute><AdminResultsPage /></AdminRoute>} />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

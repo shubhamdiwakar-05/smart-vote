@@ -3,8 +3,9 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeContext } from '../contexts/ThemeContext';
 import { Button } from './ui/button';
-import { Moon, Sun, Menu, X, Vote } from 'lucide-react';
+import { Moon, Sun, Menu, X, Vote, ShieldCheck } from 'lucide-react';
 import { Show, UserButton } from '@clerk/react';
+import { useAdminCheck } from '../hooks/useAdminCheck';
 
 const navItems = [
   { label: 'Home', path: '/' },
@@ -16,6 +17,7 @@ export default function Navbar() {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { isAdmin } = useAdminCheck();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -61,6 +63,17 @@ export default function Navbar() {
 
           <Show when="signed-in">
             <div className="hidden md:flex items-center gap-2">
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/admin')}
+                  className="gap-1.5 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Admin
+                </Button>
+              )}
               <Button variant="secondary" size="sm" onClick={() => navigate('/dashboard')}>
                 Dashboard
               </Button>
@@ -124,6 +137,17 @@ export default function Navbar() {
                 </Button>
                 
                 <Show when="signed-in">
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { navigate('/admin'); setOpen(false); }}
+                      className="justify-start gap-2 border-red-200 text-red-600 dark:border-red-900/40 dark:text-red-400"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      Admin Panel
+                    </Button>
+                  )}
                   <Button variant="secondary" size="sm" onClick={() => { navigate('/dashboard'); setOpen(false); }}>
                     Dashboard
                   </Button>
