@@ -92,17 +92,30 @@ export default function AdminResultsPage() {
           });
 
           let totalVotes = 0;
-          const enriched = candidates
-            .map((c) => {
-              const match = voteResults?.find((r) => r.candidate_id === c.id);
-              const votes = match ? parseInt(match.total_votes, 10) : 0;
-              totalVotes += votes;
-              return { ...c, votes };
-            })
+          const enriched = candidates.map((c) => {
+            const match = voteResults?.find((r) => r.candidate_id === c.id);
+            const votes = match ? parseInt(match.total_votes, 10) : 0;
+            totalVotes += votes;
+            return { ...c, votes };
+          });
+
+          const notaMatch = voteResults?.find((r) => r.candidate_id === null);
+          const notaVotes = notaMatch ? parseInt(notaMatch.total_votes, 10) : 0;
+          totalVotes += notaVotes;
+
+          enriched.push({
+            id: null,
+            name: 'None of the Above (NOTA)',
+            party: '—',
+            symbol: '🚫',
+            votes: notaVotes,
+          });
+
+          const sortedAndRanked = enriched
             .sort((a, b) => b.votes - a.votes)
             .map((c, i) => ({ ...c, rank: i + 1 }));
 
-          return { ...election, candidates: enriched, totalVotes };
+          return { ...election, candidates: sortedAndRanked, totalVotes };
         })
       );
 

@@ -119,7 +119,7 @@ export default function VotePage() {
 
     const { candidate, electionId } = selected;
     const { error } = await supabase.from('votes').insert([
-      { election_id: electionId, candidate_id: candidate.id, voter_id: user.id },
+      { election_id: electionId, candidate_id: candidate.id || null, voter_id: user.id },
     ]);
 
     if (error) {
@@ -301,8 +301,11 @@ export default function VotePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {candidates.map((candidate) => (
-                    <motion.div key={candidate.id} whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 400 }}>
+                  {[
+                    ...candidates,
+                    { id: null, name: 'None of the Above (NOTA)', party: '—', symbol: '🚫', photo_url: null }
+                  ].map((candidate) => (
+                    <motion.div key={candidate.id || 'nota'} whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 400 }}>
                       <CandidateCard
                         candidate={{
                           id: candidate.id,
@@ -312,7 +315,12 @@ export default function VotePage() {
                           photo: candidate.photo_url,
                         }}
                         onSelect={(id) => {
-                          const c = candidates.find((c) => c.id === id);
+                          let c;
+                          if (id === null) {
+                            c = { id: null, name: 'None of the Above (NOTA)', party: '—', symbol: '🚫' };
+                          } else {
+                            c = candidates.find((cand) => cand.id === id);
+                          }
                           if (c) handleSelect(c, election.id);
                         }}
                       />

@@ -42,17 +42,31 @@ export default function ResultsPage() {
           });
 
           let totalVotes = 0;
-          const enriched = candidates
-            .map((c) => {
-              const match = voteResults?.find((r) => r.candidate_id === c.id);
-              const votes = match ? parseInt(match.total_votes, 10) : 0;
-              totalVotes += votes;
-              return { id: c.id, name: c.name, party: c.party, photo: c.photo_url, symbol: c.symbol, votes };
-            })
+          const enriched = candidates.map((c) => {
+            const match = voteResults?.find((r) => r.candidate_id === c.id);
+            const votes = match ? parseInt(match.total_votes, 10) : 0;
+            totalVotes += votes;
+            return { id: c.id, name: c.name, party: c.party, photo: c.photo_url, symbol: c.symbol, votes };
+          });
+
+          const notaMatch = voteResults?.find((r) => r.candidate_id === null);
+          const notaVotes = notaMatch ? parseInt(notaMatch.total_votes, 10) : 0;
+          totalVotes += notaVotes;
+
+          enriched.push({
+            id: null,
+            name: 'None of the Above (NOTA)',
+            party: '—',
+            photo: null,
+            symbol: '🚫',
+            votes: notaVotes,
+          });
+
+          const sortedAndRanked = enriched
             .sort((a, b) => b.votes - a.votes)
             .map((item, index) => ({ ...item, percent: totalVotes > 0 ? Math.round((item.votes / totalVotes) * 100) : 0, rank: index + 1 }));
 
-          return { ...election, results: enriched, totalVotes };
+          return { ...election, results: sortedAndRanked, totalVotes };
         })
       );
 
