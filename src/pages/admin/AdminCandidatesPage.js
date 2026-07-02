@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase, supabaseAdmin } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import {
   Plus,
@@ -48,7 +48,7 @@ function CandidateModal({ candidate, elections, onClose, onSave }) {
     const ext = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await supabaseAdmin.storage
       .from('candidate-photos')
       .upload(fileName, file, { contentType: file.type });
 
@@ -58,7 +58,7 @@ function CandidateModal({ candidate, elections, onClose, onSave }) {
       return;
     }
 
-    const { data: urlData } = supabase.storage.from('candidate-photos').getPublicUrl(fileName);
+    const { data: urlData } = supabaseAdmin.storage.from('candidate-photos').getPublicUrl(fileName);
     const publicUrl = urlData.publicUrl;
     setPreviewUrl(publicUrl);
     setForm((f) => ({ ...f, photo_url: publicUrl }));
@@ -85,9 +85,9 @@ function CandidateModal({ candidate, elections, onClose, onSave }) {
 
     let error;
     if (candidate?.id) {
-      ({ error } = await supabase.from('candidates').update(payload).eq('id', candidate.id));
+      ({ error } = await supabaseAdmin.from('candidates').update(payload).eq('id', candidate.id));
     } else {
-      ({ error } = await supabase.from('candidates').insert([payload]));
+      ({ error } = await supabaseAdmin.from('candidates').insert([payload]));
     }
 
     setSaving(false);
@@ -295,7 +295,7 @@ export default function AdminCandidatesPage() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this candidate? This cannot be undone.')) return;
     setDeleting(id);
-    const { error } = await supabase.from('candidates').delete().eq('id', id);
+    const { error } = await supabaseAdmin.from('candidates').delete().eq('id', id);
     setDeleting(null);
     if (error) { toast.error('Failed to delete: ' + error.message); }
     else { toast.success('Candidate deleted.'); fetchData(); }
