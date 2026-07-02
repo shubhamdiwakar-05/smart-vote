@@ -43,7 +43,11 @@ function ElectionListCard({ election, candidateCount, onVote, onResults }) {
   const formatDate = (ts, fallback) => {
     if (!ts) return fallback || '—';
     try {
-      return new Date(ts).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+      return new Date(ts).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
     } catch {
       return fallback || ts;
     }

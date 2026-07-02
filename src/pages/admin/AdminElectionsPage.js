@@ -23,6 +23,39 @@ import {
 const STATUS_OPTIONS = ['Upcoming', 'Ongoing', 'Completed'];
 const TYPE_OPTIONS = ['General', 'State', 'Local', 'Municipal', 'By-election'];
 
+// IST = UTC+5:30
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+// Convert a datetime-local string ("2026-07-02T21:55") to an IST-aware ISO string
+// so Supabase stores the correct UTC equivalent
+const localToIST = (dtLocal) => {
+  if (!dtLocal) return null;
+  return dtLocal + ':00+05:30';
+};
+
+// Convert a UTC ISO string from Supabase back to IST "YYYY-MM-DDTHH:mm"
+// for use in a datetime-local input
+const utcToISTInput = (utcStr) => {
+  if (!utcStr) return '';
+  const utcMs = new Date(utcStr).getTime();
+  const istDate = new Date(utcMs + IST_OFFSET_MS);
+  return istDate.toISOString().slice(0, 16);
+};
+
+// Format any timestamp for display in IST
+const formatIST = (ts) => {
+  if (!ts) return '—';
+  try {
+    return new Date(ts).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  } catch {
+    return ts;
+  }
+};
+
 const statusStyle = {
   Upcoming: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
   Ongoing: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
@@ -33,17 +66,22 @@ const statusIcon = { Upcoming: Clock, Ongoing: Activity, Completed: CheckCircle 
 
 function ElectionModal({ election, onClose, onSave }) {
   const [form, setForm] = useState(
-    election || {
-      title: '',
-      description: '',
-      type: 'General',
-      district: '',
-      status: 'Upcoming',
-      start_time: '',
-      end_time: '',
-      start_date: '',
-      end_date: '',
-    }
+    election
+      ? {
+          ...election,
+          // Convert stored UTC timestamps back to IST for the input
+          start_time: utcToISTInput(election.start_time),
+          end_time: utcToISTInput(election.end_time),
+        }
+      : {
+          title: '',
+          description: '',
+          type: 'General',
+          district: '',
+          status: 'Upcoming',
+          start_time: '',
+          end_time: '',
+        }
   );
   const [saving, setSaving] = useState(false);
 
@@ -57,16 +95,24 @@ function ElectionModal({ election, onClose, onSave }) {
       return toast.error('End time must be after start time');
 
     setSaving(true);
+    // Treat the datetime-local values as IST and convert to UTC-aware ISO strings
+    const startIST = localToIST(form.start_time);
+    const endIST = localToIST(form.end_time);
     const payload = {
       title: form.title.trim(),
       description: form.description?.trim() || null,
       type: form.type || 'General',
       district: form.district?.trim() || null,
       status: form.status || 'Upcoming',
-      start_time: form.start_time,
-      end_time: form.end_time,
-      start_date: form.start_time ? new Date(form.start_time).toLocaleDateString('en-IN') : form.start_date,
-      end_date: form.end_time ? new Date(form.end_time).toLocaleDateString('en-IN') : form.end_date,
+      start_time: startIST,
+      end_time: endIST,
+      // Human-readable IST date strings for legacy display fields
+      start_date: startIST
+        ? new Date(startIST).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium' })
+        : null,
+      end_date: endIST
+        ? new Date(endIST).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium' })
+        : null,
     };
 
     let error;
@@ -332,13 +378,9 @@ export default function AdminElectionsPage() {
                           {(election.start_time || election.start_date) && (
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              {election.start_time
-                                ? new Date(election.start_time).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
-                                : election.start_date}
+                              {formatIST(election.start_time) || election.start_date}
                               {' → '}
-                              {election.end_time
-                                ? new Date(election.end_time).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
-                                : election.end_date}
+                              {formatIST(election.end_time) || election.end_date}
                             </span>
                           )}
                         </div>
