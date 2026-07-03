@@ -52,7 +52,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav Items */}
-      <nav className="flex flex-col gap-1">
+      <nav className="flex flex-col gap-1 tour-sidebar-nav">
         {voterItems.map((item) => {
           const Icon = item.icon;
           return (

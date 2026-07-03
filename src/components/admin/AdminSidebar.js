@@ -12,6 +12,7 @@ import {
   LogOut,
   ShieldCheck,
   Settings,
+  MessageSquare,
 } from 'lucide-react';
 
 const adminNavItems = [

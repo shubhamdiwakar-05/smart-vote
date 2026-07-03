@@ -19,6 +19,7 @@ import AdminElectionsPage from '../pages/admin/AdminElectionsPage';
 import AdminCandidatesPage from '../pages/admin/AdminCandidatesPage';
 import AdminVotersPage from '../pages/admin/AdminVotersPage';
 import AdminResultsPage from '../pages/admin/AdminResultsPage';
+import AdminSupportPage from '../pages/admin/AdminSupportPage';
 
 import AdminRoute from './AdminRoute';
 import { useUser } from '@clerk/react';
@@ -75,6 +76,7 @@ export default function AppRoutes() {
       <Route path="/admin/candidates" element={<AdminRoute><AdminCandidatesPage /></AdminRoute>} />
       <Route path="/admin/voters" element={<AdminRoute><AdminVotersPage /></AdminRoute>} />
       <Route path="/admin/results" element={<AdminRoute><AdminResultsPage /></AdminRoute>} />
+      <Route path="/admin/support" element={<AdminRoute><AdminSupportPage /></AdminRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
