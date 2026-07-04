@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent } from '../components/ui/card';
-import { Mail, Phone, MapPin, Send, MessageSquare, Loader2, User, ShieldAlert } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageSquare, Loader2, User, ShieldAlert, Upload, ImageIcon, X } from 'lucide-react';
 import { useUser } from '@clerk/react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -22,6 +22,18 @@ export default function ContactPage() {
   const [expandedTicketId, setExpandedTicketId] = useState(null);
   const [replyText, setReplyText] = useState({});
   const [sendingReply, setSendingReply] = useState(null);
+
+  // New features state
+  const [screenshot, setScreenshot] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const PREDEFINED_QUERIES = [
+    'OTP not received',
+    'Login Issue',
+    'Election details missing',
+    'Update Voter ID'
+  ];
 
   // Auto-fill form if logged in
   useEffect(() => {
@@ -67,30 +79,88 @@ export default function ContactPage() {
     }
   };
 
+  const handleScreenshotUpload = async (file) => {
+    if (!file) return null;
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error('Screenshot must be under 3MB');
+      throw new Error('Screenshot too large');
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Only JPEG, PNG, WEBP allowed');
+      throw new Error('Invalid file type');
+    }
+
+    const ext = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from('support-screenshots')
+      .upload(fileName, file, { contentType: file.type });
+
+    if (error) {
+      toast.error('Upload failed: ' + error.message);
+      throw error;
+    }
+
+    const { data: urlData } = supabase.storage.from('support-screenshots').getPublicUrl(fileName);
+    return urlData.publicUrl;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
-      const { error } = await supabase
-        .from('contact_messages')
-        .insert([{ 
-          name: form.name, 
-          email: form.email, 
-          message: form.message,
-          user_id: user?.id || null 
-        }]);
+      let uploadedUrl = null;
+      if (screenshot) {
+        setUploading(true);
+        uploadedUrl = await handleScreenshotUpload(screenshot);
+        setUploading(false);
+      }
 
-      if (error) throw error;
+      let result;
+      let retries = 3;
+      
+      while (retries > 0) {
+        result = await supabase
+          .from('contact_messages')
+          .insert([{ 
+            name: form.name, 
+            email: form.email, 
+            message: form.message,
+            user_id: user?.id || null,
+            screenshot_url: uploadedUrl
+          }]);
+          
+        // Handle Supabase cold start / Envoy proxy 503 timeouts
+        if (result.error && (
+            result.error.message.includes('upstream connect error') || 
+            result.error.message.includes('timeout') || 
+            result.error.message.includes('503') ||
+            result.error.code === '503'
+        )) {
+          retries -= 1;
+          if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2 seconds before retry
+            continue;
+          }
+        }
+        break;
+      }
+
+      if (result.error) throw result.error;
       
       toast.success('Message Sent!', { description: 'We have received your concern and will get back to you soon.' });
       setForm(prev => ({ ...prev, message: '' }));
+      setScreenshot(null);
+      setPreviewUrl(null);
       if (isSignedIn) fetchMyTickets();
     } catch (err) {
       console.error(err);
-      toast.error('Failed to send message', { description: err.message });
+      toast.error('Failed to send message', { description: err.message || 'Connection error. Please try again.' });
     } finally {
       setIsSubmitting(false);
+      setUploading(false);
     }
   };
 
@@ -100,16 +170,39 @@ export default function ContactPage() {
     
     setSendingReply(ticketId);
     try {
-      const { data, error } = await supabase
-        .from('support_messages')
-        .insert([{
-          ticket_id: ticketId,
-          sender_id: user.id,
-          sender_role: 'user',
-          message: text
-        }])
-        .select()
-        .single();
+      let data, error;
+      let retries = 3;
+      
+      while (retries > 0) {
+        const result = await supabase
+          .from('support_messages')
+          .insert([{
+            ticket_id: ticketId,
+            sender_id: user.id,
+            sender_role: 'user',
+            message: text
+          }])
+          .select()
+          .single();
+          
+        data = result.data;
+        error = result.error;
+
+        // Handle Supabase cold start / Envoy proxy 503 timeouts
+        if (error && (
+            error.message.includes('upstream connect error') || 
+            error.message.includes('timeout') || 
+            error.message.includes('503') ||
+            error.code === '503'
+        )) {
+          retries -= 1;
+          if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            continue;
+          }
+        }
+        break;
+      }
 
       if (error) throw error;
 
@@ -127,7 +220,7 @@ export default function ContactPage() {
       }));
     } catch (error) {
       console.error(error);
-      toast.error('Failed to send reply');
+      toast.error('Failed to send reply', { description: error.message || 'Connection error. Please try again.' });
     } finally {
       setSendingReply(null);
     }
@@ -218,7 +311,25 @@ export default function ContactPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="message" className="text-sm font-semibold">{t('contact.msg_label', 'Message')}</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="message" className="text-sm font-semibold">{t('contact.msg_label', 'Message')}</Label>
+                      <span className="text-xs text-muted-foreground">Or pick a common issue:</span>
+                    </div>
+                    
+                    {/* Pre-defined Query Chips */}
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {PREDEFINED_QUERIES.map(query => (
+                        <button
+                          key={query}
+                          type="button"
+                          onClick={() => setForm(prev => ({ ...prev, message: prev.message ? `${prev.message}\n${query}` : query }))}
+                          className="px-3 py-1.5 text-xs font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                        >
+                          {query}
+                        </button>
+                      ))}
+                    </div>
+
                     <textarea 
                       id="message" 
                       rows={5} 
@@ -230,9 +341,56 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <Button type="submit" size="lg" className="w-full mt-4 text-lg font-bold rounded-xl" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Send className="h-5 w-5 mr-2" />}
-                    {isSubmitting ? 'Sending...' : t('contact.send', 'Send Message')}
+                  {/* Screenshot Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Attach Screenshot (Optional)</Label>
+                    <div className="flex items-center gap-4">
+                      <div className="h-20 w-20 rounded-xl border-2 border-dashed border-border overflow-hidden flex items-center justify-center bg-muted/30 shrink-0 relative group">
+                        {previewUrl ? (
+                          <>
+                            <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <button type="button" onClick={() => { setScreenshot(null); setPreviewUrl(null); }} className="text-white hover:text-red-400">
+                                <X className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          id="screenshot"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setScreenshot(file);
+                              setPreviewUrl(URL.createObjectURL(file));
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => document.getElementById('screenshot').click()}
+                          disabled={isSubmitting}
+                        >
+                          <Upload className="h-3.5 w-3.5" /> Upload Screenshot
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-1.5">JPEG, PNG, WEBP · Max 3MB</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button type="submit" size="lg" className="w-full mt-4 text-lg font-bold rounded-xl" disabled={isSubmitting || uploading}>
+                    {(isSubmitting || uploading) ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Send className="h-5 w-5 mr-2" />}
+                    {uploading ? 'Uploading...' : isSubmitting ? 'Sending...' : t('contact.send', 'Send Message')}
                   </Button>
                 </form>
               </CardContent>
@@ -278,6 +436,11 @@ export default function ContactPage() {
                               </span>
                             </div>
                             <p className="font-semibold text-lg line-clamp-1">{ticket.message}</p>
+                            {ticket.screenshot_url && (
+                              <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 w-fit px-2 py-1 rounded-md border border-blue-100">
+                                <ImageIcon className="h-3.5 w-3.5" /> Attached Screenshot
+                              </div>
+                            )}
                           </div>
                           <Button variant="ghost" size="sm">
                             {isExpanded ? 'Hide Chat' : 'View Chat'}
@@ -298,6 +461,11 @@ export default function ContactPage() {
                                 <div className="flex-1 p-4 rounded-2xl rounded-tl-none bg-background border border-border/50 shadow-sm">
                                   <p className="text-sm font-bold text-primary mb-1">You</p>
                                   <p className="text-sm whitespace-pre-wrap leading-relaxed">{ticket.message}</p>
+                                  {ticket.screenshot_url && (
+                                    <div className="mt-3 rounded-lg overflow-hidden border border-border/50 max-w-sm">
+                                      <img src={ticket.screenshot_url} alt="Attached screenshot" className="w-full object-contain" />
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 

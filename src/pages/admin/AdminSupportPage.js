@@ -69,16 +69,39 @@ export default function AdminSupportPage() {
     
     setSendingReply(ticketId);
     try {
-      const { data, error } = await supabase
-        .from('support_messages')
-        .insert([{
-          ticket_id: ticketId,
-          sender_id: adminUser?.id || 'admin',
-          sender_role: 'admin',
-          message: text
-        }])
-        .select()
-        .single();
+      let data, error;
+      let retries = 3;
+
+      while (retries > 0) {
+        const result = await supabase
+          .from('support_messages')
+          .insert([{
+            ticket_id: ticketId,
+            sender_id: adminUser?.id || 'admin',
+            sender_role: 'admin',
+            message: text
+          }])
+          .select()
+          .single();
+          
+        data = result.data;
+        error = result.error;
+
+        // Handle Supabase cold start / Envoy proxy 503 timeouts
+        if (error && (
+            error.message.includes('upstream connect error') || 
+            error.message.includes('timeout') || 
+            error.message.includes('503') ||
+            error.code === '503'
+        )) {
+          retries -= 1;
+          if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            continue;
+          }
+        }
+        break;
+      }
 
       if (error) throw error;
 
@@ -99,7 +122,7 @@ export default function AdminSupportPage() {
 
     } catch (error) {
       console.error(error);
-      toast.error('Failed to send reply');
+      toast.error('Failed to send reply', { description: error.message || 'Connection error. Please try again.' });
     } finally {
       setSendingReply(null);
     }
@@ -185,6 +208,11 @@ export default function AdminSupportPage() {
                     <div className="flex-1 bg-muted/30 p-4 rounded-2xl rounded-tl-none border border-border/50">
                       <p className="text-sm font-semibold mb-1 text-primary">{msg.name} (Original Query)</p>
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                      {msg.screenshot_url && (
+                        <div className="mt-3 rounded-lg overflow-hidden border border-border/50 max-w-sm">
+                          <img src={msg.screenshot_url} alt="Attached screenshot" className="w-full object-contain" />
+                        </div>
+                      )}
                     </div>
                   </div>
 

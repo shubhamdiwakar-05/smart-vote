@@ -185,5 +185,46 @@
     "winner": "विजेता",
     "votes": "वोट",
     "leaderboard": "पूर्ण लीडरबोर्ड"
+  },
+  "admin": {
+    "sidebar": {
+      "overview": "अवलोकन",
+      "elections": "चुनाव",
+      "candidates": "उम्मीदवार",
+      "voters": "मतदाता",
+      "results": "परिणाम",
+      "support": "सहायता",
+      "role": "प्रशासक",
+      "voter_dashboard": "मतदाता डैशबोर्ड",
+      "sign_out": "साइन आउट करें",
+      "control_panel": "व्यवस्थापक नियंत्रण पैनल"
+    },
+    "dashboard": {
+      "control_panel": "व्यवस्थापक नियंत्रण पैनल",
+      "title": "व्यवस्थापक डैशबोर्ड",
+      "desc": "चुनावों, उम्मीदवारों का प्रबंधन करें और मतदान प्रणाली की निगरानी करें।",
+      "create_election": "चुनाव बनाएं",
+      "system_overview": "प्रणाली अवलोकन",
+      "stat_total_elections": "कुल चुनाव",
+      "stat_active_now": "अभी सक्रिय",
+      "stat_upcoming": "आगामी",
+      "stat_completed": "पूर्ण",
+      "stat_total_candidates": "कुल उम्मीदवार",
+      "stat_votes_cast": "डाले गए वोट",
+      "stat_registered_voters": "पंजीकृत मतदाता",
+      "stat_voter_turnout": "मतदान प्रतिशत",
+      "quick_actions": "त्वरित कार्रवाइयाँ",
+      "qa_create_election": "चुनाव बनाएं",
+      "qa_add_candidate": "उम्मीदवार जोड़ें",
+      "qa_view_voters": "मतदाता देखें",
+      "qa_see_results": "परिणाम देखें",
+      "qa_support": "सहायता",
+      "recent_elections": "हाल के चुनाव",
+      "view_all": "सभी देखें",
+      "no_elections": "अभी तक कोई चुनाव नहीं",
+      "create_first": "शुरू करने के लिए अपना पहला चुनाव बनाएं।",
+      "nationwide": "राष्ट्रव्यापी",
+      "general": "सामान्य"
+    }
   }
 }

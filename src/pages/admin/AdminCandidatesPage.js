@@ -16,7 +16,7 @@ import {
   ImageIcon,
 } from 'lucide-react';
 
-const EMOJI_SYMBOLS = ['🦁', '🐯', '🦊', '🐘', '🦅', '🌹', '🌻', '⭐', '🔥', '💎', '🏹', '⚡', '🌙', '🌊', '🍀'];
+const EMOJI_SYMBOLS = ['🪷', '✋', '🧹', '🐘', '🚲', '🕰️', '🌾', '🏹', '⚖️', '🚜', '🏠', '☂️', '✈️', '🦁', '🌴'];
 
 function CandidateModal({ candidate, elections, onClose, onSave }) {
   const [form, setForm] = useState(
@@ -48,12 +48,34 @@ function CandidateModal({ candidate, elections, onClose, onSave }) {
     const ext = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
 
-    const { data, error } = await supabase.storage
-      .from('candidate-photos')
-      .upload(fileName, file, { contentType: file.type });
+    let error;
+    let retries = 3;
+    
+    while (retries > 0) {
+      const result = await supabase.storage
+        .from('candidate-photos')
+        .upload(fileName, file, { contentType: file.type });
+        
+      error = result.error;
+      
+      // Handle Supabase cold start / Envoy proxy 503 timeouts
+      if (error && (
+          error.message.includes('upstream connect error') || 
+          error.message.includes('timeout') || 
+          error.message.includes('503') ||
+          error.code === '503'
+      )) {
+        retries -= 1;
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+      }
+      break;
+    }
 
     if (error) {
-      toast.error('Upload failed: ' + error.message);
+      toast.error('Upload failed: ' + (error.message || 'Connection error. Please try again.'));
       setUploading(false);
       return;
     }
@@ -84,15 +106,34 @@ function CandidateModal({ candidate, elections, onClose, onSave }) {
     };
 
     let error;
-    if (candidate?.id) {
-      ({ error } = await supabase.from('candidates').update(payload).eq('id', candidate.id));
-    } else {
-      ({ error } = await supabase.from('candidates').insert([payload]));
+    let retries = 3;
+
+    while (retries > 0) {
+      if (candidate?.id) {
+        ({ error } = await supabase.from('candidates').update(payload).eq('id', candidate.id));
+      } else {
+        ({ error } = await supabase.from('candidates').insert([payload]));
+      }
+
+      // Handle Supabase cold start / Envoy proxy 503 timeouts
+      if (error && (
+          error.message.includes('upstream connect error') || 
+          error.message.includes('timeout') || 
+          error.message.includes('503') ||
+          error.code === '503'
+      )) {
+        retries -= 1;
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+      }
+      break;
     }
 
     setSaving(false);
     if (error) {
-      toast.error('Failed to save: ' + error.message);
+      toast.error('Failed to save: ' + (error.message || 'Connection error. Please try again.'));
     } else {
       toast.success(candidate?.id ? 'Candidate updated!' : 'Candidate added!');
       onSave();
@@ -203,7 +244,7 @@ function CandidateModal({ candidate, elections, onClose, onSave }) {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/*,image/jpeg,image/png,image/webp"
                   onChange={handlePhotoUpload}
                   className="hidden"
                 />

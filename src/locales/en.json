@@ -185,5 +185,46 @@
     "winner": "Winner",
     "votes": "Votes",
     "leaderboard": "Full Leaderboard"
+  },
+  "admin": {
+    "sidebar": {
+      "overview": "Overview",
+      "elections": "Elections",
+      "candidates": "Candidates",
+      "voters": "Voters",
+      "results": "Results",
+      "support": "Support",
+      "role": "Administrator",
+      "voter_dashboard": "Voter Dashboard",
+      "sign_out": "Sign Out",
+      "control_panel": "Admin Control Panel"
+    },
+    "dashboard": {
+      "control_panel": "Admin Control Panel",
+      "title": "Admin Dashboard",
+      "desc": "Manage elections, candidates, and monitor the voting system.",
+      "create_election": "Create Election",
+      "system_overview": "System Overview",
+      "stat_total_elections": "Total Elections",
+      "stat_active_now": "Active Now",
+      "stat_upcoming": "Upcoming",
+      "stat_completed": "Completed",
+      "stat_total_candidates": "Total Candidates",
+      "stat_votes_cast": "Votes Cast",
+      "stat_registered_voters": "Registered Voters",
+      "stat_voter_turnout": "Voter Turnout",
+      "quick_actions": "Quick Actions",
+      "qa_create_election": "Create Election",
+      "qa_add_candidate": "Add Candidate",
+      "qa_view_voters": "View Voters",
+      "qa_see_results": "See Results",
+      "qa_support": "Support",
+      "recent_elections": "Recent Elections",
+      "view_all": "View All",
+      "no_elections": "No elections yet",
+      "create_first": "Create your first election to get started.",
+      "nationwide": "Nationwide",
+      "general": "General"
+    }
   }
 }
