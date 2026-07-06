@@ -16,6 +16,16 @@ export default function AdminSupportPage() {
 
   useEffect(() => {
     fetchMessages();
+
+    const channel = supabase
+      .channel('admin_support_updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, fetchMessages)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_messages' }, fetchMessages)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchMessages = async () => {

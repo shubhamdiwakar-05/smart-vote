@@ -126,7 +126,19 @@ export default function ElectionListPage() {
         .order('start_time', { ascending: true });
 
       if (!error && data) {
-        setElections(data);
+        const nowMs = Date.now();
+        const updatedData = data.map(election => {
+          let computedStatus = election.status;
+          if (election.start_time && election.end_time) {
+            const startMs = new Date(election.start_time).getTime();
+            const endMs = new Date(election.end_time).getTime();
+            if (nowMs >= endMs) computedStatus = 'Completed';
+            else if (nowMs >= startMs) computedStatus = 'Ongoing';
+            else computedStatus = 'Upcoming';
+          }
+          return { ...election, status: computedStatus };
+        });
+        setElections(updatedData);
         // Fetch candidate counts per election
         const counts = {};
         await Promise.all(

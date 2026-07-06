@@ -13,12 +13,27 @@ export default function ResultsPage() {
 
   useEffect(() => {
     const fetchAllResults = async () => {
-      // Only show Completed elections to voters (results locked until done)
-      const { data: elections } = await supabase
+      // Fetch all elections and dynamically compute which are completed
+      const { data: allElections } = await supabase
         .from('elections')
         .select('*')
-        .eq('status', 'Completed')
         .order('end_time', { ascending: false });
+
+      let elections = [];
+      if (allElections) {
+        const nowMs = Date.now();
+        elections = allElections.filter(election => {
+          let computedStatus = election.status;
+          if (election.start_time && election.end_time) {
+            const startMs = new Date(election.start_time).getTime();
+            const endMs = new Date(election.end_time).getTime();
+            if (nowMs >= endMs) computedStatus = 'Completed';
+            else if (nowMs >= startMs) computedStatus = 'Ongoing';
+            else computedStatus = 'Upcoming';
+          }
+          return computedStatus === 'Completed';
+        });
+      }
 
       if (!elections || elections.length === 0) {
         setElectionsWithResults([]);
@@ -117,7 +132,7 @@ export default function ResultsPage() {
           ) : (
             <>
               {/* Election Tabs */}
-              {electionsWithResults.length > 1 && (
+              {electionsWithResults.length > 0 && (
                 <div className="flex gap-2 flex-wrap">
                   {electionsWithResults.map((e) => (
                     <button
@@ -136,15 +151,18 @@ export default function ResultsPage() {
               )}
 
               {activeElection && (
-                <div className="space-y-4">
+                <div className="space-y-4 mt-6">
                   {/* Election name label */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full border text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                      Completed
-                    </span>
-                    <span className="text-sm text-muted-foreground flex items-center gap-1">
-                      <BarChart3 className="h-3.5 w-3.5" /> {activeElection.totalVotes.toLocaleString()} total votes
-                    </span>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground mb-2">{activeElection.title}</h2>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full border text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                        Completed
+                      </span>
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <BarChart3 className="h-3.5 w-3.5" /> {activeElection.totalVotes.toLocaleString()} total votes
+                      </span>
+                    </div>
                   </div>
 
                   {activeElection.results.length === 0 ? (

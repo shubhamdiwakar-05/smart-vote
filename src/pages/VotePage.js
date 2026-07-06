@@ -21,6 +21,7 @@ import { CheckCircle2, MapPin, Calendar, AlertCircle, Vote } from 'lucide-react'
 export default function VotePage() {
   const { user: clerkUser } = useUser();
   const [profile, setProfile] = useState(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -28,6 +29,7 @@ export default function VotePage() {
         const { data } = await supabase.from('profiles').select('*').eq('id', clerkUser.id).maybeSingle();
         setProfile(data);
       }
+      setProfileLoaded(true);
     };
     fetchProfile();
   }, [clerkUser]);
@@ -54,22 +56,65 @@ export default function VotePage() {
 
   // Fetch all ongoing elections and candidates
   useEffect(() => {
+    if (!profileLoaded) return;
+
     const fetchElectionData = async () => {
       setLoading(true);
-      const { data: ongoingElections } = await supabase
+      const { data: allElections } = await supabase
         .from('elections')
         .select('*')
-        .eq('status', 'Ongoing')
         .order('start_time', { ascending: true });
 
-      if (!ongoingElections || ongoingElections.length === 0) {
+      if (!allElections || allElections.length === 0) {
+        setElectionsData([]);
+        setLoading(false);
+        return;
+      }
+
+      const nowMs = Date.now();
+      const ongoingElections = allElections.filter(election => {
+        let computedStatus = election.status;
+        if (election.start_time && election.end_time) {
+          const startMs = new Date(election.start_time).getTime();
+          const endMs = new Date(election.end_time).getTime();
+          if (nowMs >= endMs) computedStatus = 'Completed';
+          else if (nowMs >= startMs) computedStatus = 'Ongoing';
+          else computedStatus = 'Upcoming';
+        }
+        return computedStatus === 'Ongoing';
+      });
+
+      if (ongoingElections.length === 0) {
+        setElectionsData([]);
+        setLoading(false);
+        return;
+      }
+
+      // Filter elections based on user's location eligibility
+      let visibleElections = ongoingElections;
+      if (user) {
+        visibleElections = ongoingElections.filter(election => {
+          if (!election.type || election.type === 'General') return true;
+          
+          const loc = (election.district || '').toLowerCase().trim();
+          if (!loc) return true; // If no location specified, assume eligible
+          
+          const uCity = (user.city || '').toLowerCase().trim();
+          const uDist = (user.district || '').toLowerCase().trim();
+          const uState = (user.state || '').toLowerCase().trim();
+          
+          return loc === uCity || loc === uDist || loc === uState;
+        });
+      }
+
+      if (visibleElections.length === 0) {
         setElectionsData([]);
         setLoading(false);
         return;
       }
 
       const enriched = await Promise.all(
-        ongoingElections.map(async (election) => {
+        visibleElections.map(async (election) => {
           // Fetch candidates
           const { data: candidates } = await supabase
             .from('candidates')
@@ -97,7 +142,7 @@ export default function VotePage() {
     };
 
     fetchElectionData();
-  }, [user?.id]);
+  }, [user?.id, profileLoaded, profile]);
 
   const handleSelect = (candidate, electionId) => {
     if (!user) {

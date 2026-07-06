@@ -6,10 +6,10 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { useUser } from '@clerk/react';
 import { supabase } from '../lib/supabaseClient';
-import { Vote, CheckSquare, Calendar, Sparkles, ArrowRight, X, Activity, Bell, Info } from 'lucide-react';
+import { Vote, CheckSquare, Calendar, Sparkles, ArrowRight, X, Activity, Bell, Info, FileText, User as UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import UserTour from '../components/UserTour';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 
 // Welcome Popup Component
 const WelcomePopup = ({ isOpen, onClose, t, user }) => (
@@ -19,43 +19,47 @@ const WelcomePopup = ({ isOpen, onClose, t, user }) => (
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md"
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          initial={{ opacity: 0, scale: 0.9, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-lg bg-card rounded-3xl shadow-2xl overflow-hidden border border-border"
+          exit={{ opacity: 0, scale: 0.9, y: 30 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+          className="relative w-full max-w-md bg-card rounded-3xl shadow-2xl overflow-hidden border border-border/50"
         >
           <div className="absolute top-4 right-4 z-10">
-            <button onClick={onClose} className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors">
+            <button onClick={onClose} className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-colors backdrop-blur-sm">
               <X className="h-5 w-5" />
             </button>
           </div>
-          <div className="h-40 bg-gradient-to-r from-saffron via-white to-india-green relative flex items-center justify-center">
-            <div className="text-6xl absolute z-0 animate-bounce">🎊</div>
+          <div className="h-48 bg-gradient-to-br from-primary via-primary/80 to-blue-600 relative flex items-center justify-center overflow-hidden">
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+            <motion.div 
+              initial={{ scale: 0, rotate: -45 }} 
+              animate={{ scale: 1, rotate: 0 }} 
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+              className="text-7xl absolute z-0 drop-shadow-xl"
+            >
+              🎉
+            </motion.div>
           </div>
-          <div className="p-8 text-center relative z-10 -mt-10 bg-card rounded-t-[3rem] border-t border-border">
-            <h2 className="text-3xl font-extrabold mb-4">
-              Welcome, {user?.name?.split(' ')[0] || 'Voter'} 👋
+          <div className="p-8 text-center relative z-10 -mt-8 bg-card rounded-t-[2rem] border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+            <h2 className="text-3xl font-black tracking-tight mb-2 text-foreground">
+              Welcome, {user?.name?.split(' ')[0] || 'Voter'}!
             </h2>
-            <p className="text-xl font-bold mb-2">{t('dashboard.welcome_popup_title')}</p>
-            <p className="text-primary font-bold text-lg mb-4 whitespace-pre-line leading-relaxed">
-              {t('dashboard.welcome_popup_subtitle').split('. ').join('.\n')}
+            <p className="text-lg font-semibold text-primary mb-4">{t('dashboard.welcome_popup_title')}</p>
+            <p className="text-muted-foreground mb-8 leading-relaxed">
+              {t('dashboard.welcome_popup_desc')} We're excited to have you on board.
             </p>
-            <p className="text-muted-foreground mb-6 font-medium">{t('dashboard.welcome_popup_desc')}</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button size="lg" onClick={onClose} className="rounded-full shadow-lg bg-primary hover:bg-primary/90">
+            <div className="flex flex-col gap-3 justify-center">
+              <Button size="lg" onClick={onClose} className="w-full rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12 text-md">
                 {t('dashboard.welcome_popup_btn1')}
               </Button>
-              <Button size="lg" variant="outline" onClick={onClose} className="rounded-full">
-                {t('dashboard.welcome_popup_btn2')}
+              <Button size="lg" variant="ghost" onClick={onClose} className="w-full rounded-full text-muted-foreground hover:text-foreground">
+                {t('dashboard.welcome_popup_dismiss', 'Dismiss')}
               </Button>
             </div>
-            <button onClick={onClose} className="mt-6 text-xs text-muted-foreground hover:underline">
-              {t('dashboard.welcome_popup_dismiss')}
-            </button>
           </div>
         </motion.div>
       </motion.div>
@@ -70,14 +74,8 @@ export default function DashboardPage() {
 
   const [profile, setProfile] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
-  const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
-    // Check if the user is a first-time user (tour not completed)
-    const tourCompleted = localStorage.getItem('tourCompleted');
-    if (!tourCompleted) {
-      setRunTour(true);
-    }
 
     // Only show once per session
     if (!sessionStorage.getItem('welcomeShown')) {
@@ -124,27 +122,68 @@ export default function DashboardPage() {
     completedElections: 0,
   });
   const [activeElectionsList, setActiveElectionsList] = useState([]);
+  const [upcomingElectionsList, setUpcomingElectionsList] = useState([]);
+  const [candidatesList, setCandidatesList] = useState([]);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
-      const { data: activeData, count: activeCount } = await supabase
+      const { data: allElections } = await supabase
         .from('elections')
-        .select('*', { count: 'exact' })
-        .eq('status', 'Ongoing');
+        .select('*');
       
-      if (activeData) {
-        setActiveElectionsList(activeData);
+      let computedOngoing = [];
+      let computedUpcoming = [];
+      let completedCount = 0;
+
+      if (allElections) {
+        const nowMs = Date.now();
+        allElections.forEach(election => {
+          let computedStatus = election.status;
+          if (election.start_time && election.end_time) {
+            const startMs = new Date(election.start_time).getTime();
+            const endMs = new Date(election.end_time).getTime();
+            if (nowMs >= endMs) computedStatus = 'Completed';
+            else if (nowMs >= startMs) computedStatus = 'Ongoing';
+            else computedStatus = 'Upcoming';
+          }
+          
+          if (computedStatus === 'Ongoing') computedOngoing.push(election);
+          else if (computedStatus === 'Upcoming') computedUpcoming.push(election);
+          else if (computedStatus === 'Completed') completedCount++;
+        });
       }
 
-      const { count: upcomingCount } = await supabase
-        .from('elections')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'Upcoming');
+      // Filter elections based on user's location eligibility
+      if (user) {
+        const filterByLocation = (election) => {
+          if (!election.type || election.type === 'General') return true;
+          const loc = (election.district || '').toLowerCase().trim();
+          if (!loc) return true;
+          const uCity = (user.city || '').toLowerCase().trim();
+          const uDist = (user.district || '').toLowerCase().trim();
+          const uState = (user.state || '').toLowerCase().trim();
+          return loc === uCity || loc === uDist || loc === uState;
+        };
+        computedOngoing = computedOngoing.filter(filterByLocation);
+        // We do not filter upcoming elections by location so users can see all upcoming elections and their manifestos
+      }
 
-      const { count: completedCount } = await supabase
-        .from('elections')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'Completed');
+      setActiveElectionsList(computedOngoing);
+      setUpcomingElectionsList(computedUpcoming);
+
+      // Fetch candidates for these elections
+      const eligibleElectionIds = [...computedOngoing, ...computedUpcoming].map(e => e.id);
+      
+      let eligibleCandidates = [];
+      if (eligibleElectionIds.length > 0) {
+        const { data: cands } = await supabase
+          .from('candidates')
+          .select('*, elections(title)')
+          .in('election_id', eligibleElectionIds);
+        if (cands) eligibleCandidates = cands;
+      }
+      setCandidatesList(eligibleCandidates);
 
       let votesCount = 0;
       if (user) {
@@ -157,15 +196,25 @@ export default function DashboardPage() {
 
       setStats((prev) => ({
         ...prev,
-        activeElections: activeCount || 0,
-        upcomingVotes: upcomingCount || 0,
-        completedElections: completedCount || 0,
+        activeElections: computedOngoing.length,
+        upcomingVotes: computedUpcoming.length,
+        completedElections: completedCount,
         yourVotes: votesCount,
       }));
     };
 
     fetchStats();
-  }, [user]);
+
+    const channel = supabase
+      .channel('dashboard_updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'elections' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, fetchStats)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, user?.city, user?.district, user?.state]);
 
   const tiles = [
     { title: t('dashboard.stats_active'), value: stats.activeElections, color: 'text-primary', bg: 'bg-primary/10', icon: Vote },
@@ -176,7 +225,6 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 relative">
-      <UserTour run={runTour} onComplete={() => localStorage.setItem('tourCompleted', 'true')} />
       <WelcomePopup isOpen={showPopup} onClose={() => setShowPopup(false)} t={t} user={user} />
 
       <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8">
@@ -265,6 +313,38 @@ export default function DashboardPage() {
                 )}
               </div>
 
+              {/* Upcoming Election Cards */}
+              <div className="tour-upcoming-elections mt-8">
+                <h3 className="text-2xl font-bold tracking-tight mb-4 flex items-center gap-2">
+                  <Calendar className="h-6 w-6 text-blue-600" /> Upcoming Elections
+                </h3>
+                {upcomingElectionsList.length > 0 ? (
+                  upcomingElectionsList.map(election => (
+                    <Card key={election.id} className="hover:shadow-md transition-shadow border-blue-200/50 overflow-hidden mb-4">
+                      <div className="h-2 w-full bg-blue-500" />
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full text-xs font-bold mb-2">Upcoming</span>
+                            <h4 className="text-xl font-bold">{election.title}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Voting starts: {new Date(election.start_time || election.start_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
+                            </p>
+                          </div>
+                          <Button variant="outline" className="rounded-full shadow-sm cursor-default" disabled>Opens Soon</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card className="hover:shadow-md transition-shadow border-border overflow-hidden">
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                      No upcoming elections scheduled at this time.
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
               {/* Voter Info */}
               {user && (
                 <Card className="border-border bg-card overflow-hidden tour-voter-info">
@@ -287,6 +367,58 @@ export default function DashboardPage() {
                     </div>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* Candidates Manifesto Section */}
+              {candidatesList.length > 0 && (
+                <div className="mt-12">
+                  <h3 className="text-2xl font-bold tracking-tight mb-6 flex items-center gap-2">
+                    <FileText className="h-6 w-6 text-primary" /> Election Manifestos
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {candidatesList.map((candidate) => (
+                      <Card key={candidate.id} className="overflow-hidden hover:shadow-xl transition-shadow duration-300 border-border/50 bg-background/50 backdrop-blur-sm">
+                        <CardContent className="p-6">
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="h-16 w-16 rounded-2xl overflow-hidden bg-gradient-to-br from-saffron/20 to-india-green/20 flex items-center justify-center shrink-0 border border-border/50">
+                              {candidate.photo_url ? (
+                                <img src={candidate.photo_url} alt={candidate.name} className="h-full w-full object-cover" />
+                              ) : (
+                                <span className="text-3xl">{candidate.symbol || '👤'}</span>
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-xl line-clamp-1">{candidate.name}</h3>
+                              <div className="flex items-center gap-2 mt-1">
+                                {candidate.party && <span className="text-sm font-semibold text-muted-foreground">{candidate.party}</span>}
+                                {candidate.age && <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground">Age {candidate.age}</span>}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {candidate.elections?.title && (
+                            <div className="mb-4 inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                              {candidate.elections.title}
+                            </div>
+                          )}
+
+                          <p className="text-sm text-muted-foreground line-clamp-3 mb-6">
+                            {candidate.bio || "No biography provided."}
+                          </p>
+
+                          <Button 
+                            variant="outline" 
+                            className="w-full gap-2 border-primary/20 hover:bg-primary/5 text-primary"
+                            onClick={() => setSelectedCandidate(candidate)}
+                          >
+                            <FileText className="h-4 w-4" />
+                            Read Manifesto
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
@@ -334,6 +466,55 @@ export default function DashboardPage() {
               </Card>
             </div>
           </div>
+          
+          {/* Manifesto Modal */}
+          <Dialog open={!!selectedCandidate} onOpenChange={(open) => !open && setSelectedCandidate(null)}>
+            <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-4 text-2xl">
+                  <div className="h-12 w-12 rounded-xl overflow-hidden bg-gradient-to-br from-saffron/20 to-india-green/20 flex items-center justify-center shrink-0 border border-border/50">
+                    {selectedCandidate?.photo_url ? (
+                      <img src={selectedCandidate.photo_url} alt={selectedCandidate.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-2xl">{selectedCandidate?.symbol || '👤'}</span>
+                    )}
+                  </div>
+                  <div>
+                    {selectedCandidate?.name}
+                    <div className="text-sm text-muted-foreground font-normal mt-1 flex gap-2 items-center">
+                      {selectedCandidate?.party && <span>{selectedCandidate.party}</span>}
+                      {selectedCandidate?.age && <span>• Age {selectedCandidate.age}</span>}
+                    </div>
+                  </div>
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedCandidate?.elections?.title}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="mt-6 space-y-6">
+                <div>
+                  <h4 className="font-bold text-lg mb-2 flex items-center gap-2">
+                    <UserIcon className="h-5 w-5 text-primary" />
+                    Biography
+                  </h4>
+                  <div className="text-muted-foreground bg-muted/30 p-4 rounded-xl leading-relaxed whitespace-pre-wrap text-sm">
+                    {selectedCandidate?.bio || "No biography provided."}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-lg mb-2 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-saffron" />
+                    Manifesto & Key Points
+                  </h4>
+                  <div className="text-foreground bg-primary/5 border border-primary/10 p-5 rounded-xl leading-relaxed whitespace-pre-wrap text-sm">
+                    {selectedCandidate?.manifesto || "No manifesto provided."}
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </section>
       </div>
     </div>

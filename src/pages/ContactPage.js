@@ -44,6 +44,16 @@ export default function ContactPage() {
         email: user.primaryEmailAddress?.emailAddress || ''
       }));
       fetchMyTickets();
+
+      const channel = supabase
+        .channel('user_support_updates')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, fetchMyTickets)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'support_messages' }, fetchMyTickets)
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [isSignedIn, user]);
 
