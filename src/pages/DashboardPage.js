@@ -123,6 +123,7 @@ export default function DashboardPage() {
   });
   const [activeElectionsList, setActiveElectionsList] = useState([]);
   const [upcomingElectionsList, setUpcomingElectionsList] = useState([]);
+  const [completedElectionsList, setCompletedElectionsList] = useState([]);
   const [candidatesList, setCandidatesList] = useState([]);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
@@ -134,12 +135,12 @@ export default function DashboardPage() {
       
       let computedOngoing = [];
       let computedUpcoming = [];
-      let completedCount = 0;
+      let computedCompleted = [];
 
       if (allElections) {
         const nowMs = Date.now();
         allElections.forEach(election => {
-          let computedStatus = election.status;
+          let computedStatus = election.status || '';
           if (election.start_time && election.end_time) {
             const startMs = new Date(election.start_time).getTime();
             const endMs = new Date(election.end_time).getTime();
@@ -148,32 +149,22 @@ export default function DashboardPage() {
             else computedStatus = 'Upcoming';
           }
           
-          if (computedStatus === 'Ongoing') computedOngoing.push(election);
-          else if (computedStatus === 'Upcoming') computedUpcoming.push(election);
-          else if (computedStatus === 'Completed') completedCount++;
+          const normalizedStatus = computedStatus.toLowerCase();
+          
+          if (normalizedStatus === 'ongoing' || normalizedStatus === 'active') computedOngoing.push(election);
+          else if (normalizedStatus === 'upcoming') computedUpcoming.push(election);
+          else if (normalizedStatus === 'completed') computedCompleted.push(election);
         });
       }
 
-      // Filter elections based on user's location eligibility
-      if (user) {
-        const filterByLocation = (election) => {
-          if (!election.type || election.type === 'General') return true;
-          const loc = (election.district || '').toLowerCase().trim();
-          if (!loc) return true;
-          const uCity = (user.city || '').toLowerCase().trim();
-          const uDist = (user.district || '').toLowerCase().trim();
-          const uState = (user.state || '').toLowerCase().trim();
-          return loc === uCity || loc === uDist || loc === uState;
-        };
-        computedOngoing = computedOngoing.filter(filterByLocation);
-        // We do not filter upcoming elections by location so users can see all upcoming elections and their manifestos
-      }
+      const unfilteredOngoing = [...computedOngoing];
 
       setActiveElectionsList(computedOngoing);
       setUpcomingElectionsList(computedUpcoming);
+      setCompletedElectionsList(computedCompleted);
 
-      // Fetch candidates for these elections
-      const eligibleElectionIds = [...computedOngoing, ...computedUpcoming].map(e => e.id);
+      // Fetch candidates for these elections (unfiltered so manifestos are always visible)
+      const eligibleElectionIds = [...unfilteredOngoing, ...computedUpcoming].map(e => e.id);
       
       let eligibleCandidates = [];
       if (eligibleElectionIds.length > 0) {
@@ -198,7 +189,7 @@ export default function DashboardPage() {
         ...prev,
         activeElections: computedOngoing.length,
         upcomingVotes: computedUpcoming.length,
-        completedElections: completedCount,
+        completedElections: computedCompleted.length,
         yourVotes: votesCount,
       }));
     };
@@ -284,7 +275,11 @@ export default function DashboardPage() {
                 </h3>
                 {activeElectionsList.length > 0 ? (
                   activeElectionsList.map(election => (
-                    <Card key={election.id} className="hover:shadow-md transition-shadow border-primary/20 overflow-hidden mb-4">
+                    <Card 
+                      key={election.id} 
+                      className="hover:shadow-md transition-shadow border-primary/20 overflow-hidden mb-4 cursor-pointer"
+                      onClick={() => navigate('/vote')}
+                    >
                       <div className="h-2 w-full bg-saffron" />
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
@@ -295,7 +290,7 @@ export default function DashboardPage() {
                               Voting ends: {new Date(election.end_time || election.end_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
                             </p>
                           </div>
-                          <Button onClick={() => navigate('/elections')} className="rounded-full shadow-sm">Vote Now</Button>
+                          <Button onClick={() => navigate('/vote')} className="rounded-full shadow-sm">Vote Now</Button>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2.5 mb-1 mt-4">
                           <div className="bg-primary h-2.5 rounded-full" style={{ width: '65%' }}></div>
@@ -308,6 +303,38 @@ export default function DashboardPage() {
                   <Card className="hover:shadow-md transition-shadow border-border overflow-hidden">
                     <CardContent className="p-6 text-center text-muted-foreground">
                       No active elections at the moment.
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Completed Election Cards */}
+              <div className="tour-completed-elections mt-8">
+                <h3 className="text-2xl font-bold tracking-tight mb-4 flex items-center gap-2">
+                  <CheckSquare className="h-6 w-6 text-gray-500" /> Completed Elections
+                </h3>
+                {completedElectionsList.length > 0 ? (
+                  completedElectionsList.map(election => (
+                    <Card key={election.id} className="hover:shadow-md transition-shadow border-gray-200/50 overflow-hidden mb-4">
+                      <div className="h-2 w-full bg-gray-400" />
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 rounded-full text-xs font-bold mb-2">Completed</span>
+                            <h4 className="text-xl font-bold">{election.title}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Ended: {new Date(election.end_time || election.end_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
+                            </p>
+                          </div>
+                          <Button variant="outline" className="rounded-full shadow-sm" onClick={() => navigate('/results')}>View Results</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card className="hover:shadow-md transition-shadow border-border overflow-hidden">
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                      No completed elections at this time.
                     </CardContent>
                   </Card>
                 )}

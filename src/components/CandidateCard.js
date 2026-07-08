@@ -39,7 +39,7 @@ export default function CandidateCard({ candidate, onSelect }) {
             size="sm"
             onClick={() => onSelect(candidate.id)}
           >
-            Select Candidate
+            Vote
           </Button>
         </div>
       </CardContent>

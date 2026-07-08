@@ -18,10 +18,10 @@ import {
 
 const EMOJI_SYMBOLS = ['🪷', '✋', '🧹', '🐘', '🚲', '🕰️', '🌾', '🏹', '⚖️', '🚜', '🏠', '☂️', '✈️', '🦁', '🌴'];
 
-function CandidateModal({ candidate, elections, onClose, onSave }) {
+function CandidateModal({ candidate, elections, defaultElectionId, onClose, onSave }) {
   const [form, setForm] = useState(
     candidate || {
-      election_id: elections[0]?.id || '',
+      election_id: defaultElectionId || '',
       name: '',
       party: '',
       symbol: '⭐',
@@ -353,7 +353,13 @@ export default function AdminCandidatesPage() {
     <AdminLayout>
       <AnimatePresence>
         {showModal && elections.length > 0 && (
-          <CandidateModal candidate={editCandidate} elections={elections} onClose={handleModalClose} onSave={handleModalSave} />
+          <CandidateModal 
+            candidate={editCandidate} 
+            elections={elections} 
+            defaultElectionId={filterElection !== 'All' ? filterElection : ''}
+            onClose={handleModalClose} 
+            onSave={handleModalSave} 
+          />
         )}
       </AnimatePresence>
 

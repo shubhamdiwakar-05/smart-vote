@@ -73,7 +73,7 @@ export default function VotePage() {
 
       const nowMs = Date.now();
       const ongoingElections = allElections.filter(election => {
-        let computedStatus = election.status;
+        let computedStatus = election.status || '';
         if (election.start_time && election.end_time) {
           const startMs = new Date(election.start_time).getTime();
           const endMs = new Date(election.end_time).getTime();
@@ -81,7 +81,8 @@ export default function VotePage() {
           else if (nowMs >= startMs) computedStatus = 'Ongoing';
           else computedStatus = 'Upcoming';
         }
-        return computedStatus === 'Ongoing';
+        const normalized = computedStatus.toLowerCase();
+        return normalized === 'ongoing' || normalized === 'active';
       });
 
       if (ongoingElections.length === 0) {
@@ -90,31 +91,14 @@ export default function VotePage() {
         return;
       }
 
-      // Filter elections based on user's location eligibility
-      let visibleElections = ongoingElections;
-      if (user) {
-        visibleElections = ongoingElections.filter(election => {
-          if (!election.type || election.type === 'General') return true;
-          
-          const loc = (election.district || '').toLowerCase().trim();
-          if (!loc) return true; // If no location specified, assume eligible
-          
-          const uCity = (user.city || '').toLowerCase().trim();
-          const uDist = (user.district || '').toLowerCase().trim();
-          const uState = (user.state || '').toLowerCase().trim();
-          
-          return loc === uCity || loc === uDist || loc === uState;
-        });
-      }
-
-      if (visibleElections.length === 0) {
+      if (ongoingElections.length === 0) {
         setElectionsData([]);
         setLoading(false);
         return;
       }
 
       const enriched = await Promise.all(
-        visibleElections.map(async (election) => {
+        ongoingElections.map(async (election) => {
           // Fetch candidates
           const { data: candidates } = await supabase
             .from('candidates')
@@ -346,11 +330,8 @@ export default function VotePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[
-                    ...candidates,
-                    { id: null, name: 'None of the Above (NOTA)', party: '—', symbol: '🚫', photo_url: null }
-                  ].map((candidate) => (
-                    <motion.div key={candidate.id || 'nota'} whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 400 }}>
+                  {candidates.map((candidate) => (
+                    <motion.div key={candidate.id} whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 400 }}>
                       <CandidateCard
                         candidate={{
                           id: candidate.id,
@@ -360,12 +341,7 @@ export default function VotePage() {
                           photo: candidate.photo_url,
                         }}
                         onSelect={(id) => {
-                          let c;
-                          if (id === null) {
-                            c = { id: null, name: 'None of the Above (NOTA)', party: '—', symbol: '🚫' };
-                          } else {
-                            c = candidates.find((cand) => cand.id === id);
-                          }
+                          const c = candidates.find((cand) => cand.id === id);
                           if (c) handleSelect(c, election.id);
                         }}
                       />

@@ -54,7 +54,15 @@ function ElectionListCard({ election, candidateCount, onVote, onResults }) {
   };
 
   return (
-    <Card className="border-border hover:shadow-md transition-all duration-200 h-full group">
+    <Card 
+      className={`border-border hover:shadow-md transition-all duration-200 h-full group ${election.status !== 'Upcoming' ? 'cursor-pointer' : ''}`}
+      onClick={(e) => {
+        // Only route if the click wasn't on a button directly
+        if (e.target.closest('button')) return;
+        if (election.status === 'Ongoing') onVote();
+        else if (election.status === 'Completed') onResults();
+      }}
+    >
       <CardContent className="p-5 flex flex-col h-full gap-3">
         {/* Top row */}
         <div className="flex items-start justify-between gap-2">
@@ -128,13 +136,18 @@ export default function ElectionListPage() {
       if (!error && data) {
         const nowMs = Date.now();
         const updatedData = data.map(election => {
-          let computedStatus = election.status;
+          let computedStatus = election.status || '';
           if (election.start_time && election.end_time) {
             const startMs = new Date(election.start_time).getTime();
             const endMs = new Date(election.end_time).getTime();
             if (nowMs >= endMs) computedStatus = 'Completed';
             else if (nowMs >= startMs) computedStatus = 'Ongoing';
             else computedStatus = 'Upcoming';
+          } else {
+            const normalized = computedStatus.toLowerCase();
+            if (normalized === 'ongoing' || normalized === 'active') computedStatus = 'Ongoing';
+            else if (normalized === 'upcoming') computedStatus = 'Upcoming';
+            else if (normalized === 'completed') computedStatus = 'Completed';
           }
           return { ...election, status: computedStatus };
         });
